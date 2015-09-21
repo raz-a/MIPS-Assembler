@@ -1,0 +1,131 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<OpCodeLibrary>
+  <OpCode Name="add">
+    <Type>R_Type</Type>
+    <OP>000000</OP>
+    <Funct>100000</Funct>
+  </OpCode>
+  <OpCode Name="addi">
+    <Type>I_Type</Type>
+    <OP>001000</OP>
+  </OpCode>
+  <OpCode Name="addiu">
+    <Type>I_Type</Type>
+    <OP>01001</OP>
+  </OpCode>
+  <OpCode Name="addu">
+    <Type>R_Type</Type>
+    <OP>000000</OP>
+    <Funct>100001</Funct>
+  </OpCode>
+  <OpCode Name="and">
+    <Type>R_Type</Type>
+    <OP>000000</OP>
+    <Funct>100100</Funct>
+  </OpCode>
+  <OpCode Name="andi">
+    <Type>I_Type</Type>
+    <OP>001100</OP>
+  </OpCode>
+  <OpCode Name="beq">
+    <Type>I_Type</Type>
+    <OP>000100</OP>
+  </OpCode>
+  <OpCode Name="bne">
+    <Type>I_Type</Type>
+    <OP>000101</OP>
+  </OpCode>
+  <OpCode Name="j">
+    <Type>J_Type</Type>
+    <OP>000010</OP>
+  </OpCode>
+  <OpCode Name="jal">
+    <Type>J_Type</Type>
+    <OP>000011</OP>
+  </OpCode>
+  <OpCode Name="jr">
+    <Type>R_Type</Type>
+    <OP>000000</OP>
+    <Funct>001000</Funct>
+  </OpCode>
+  <OpCode Name="lbu">
+    <Type>I_Type</Type>
+    <OP>100100</OP>
+  </OpCode>
+  <OpCode Name="lhu">
+    <Type>I_Type</Type>
+    <OP>100101</OP>
+  </OpCode>
+  <OpCode Name="lui">
+    <Type>I_Type</Type>
+    <OP>001111</OP>
+  </OpCode>
+  <OpCode Name="lw">
+    <Type>I_Type</Type>
+    <OP>100011</OP>
+  </OpCode>
+  <OpCode Name="nor">
+    <Type>R_Type</Type>
+    <OP>000000</OP>
+    <Funct>100111</Funct>
+  </OpCode>
+  <OpCode Name="or">
+    <Type>R_Type</Type>
+    <OP>000000</OP>
+    <Funct>100101</Funct>
+  </OpCode>
+  <OpCode Name="ori">
+    <Type>I_Type</Type>
+    <OP>001101</OP>
+  </OpCode>
+  <OpCode Name="slt">
+    <Type>R_Type</Type>
+    <OP>000000</OP>
+    <Funct>101010</Funct>
+  </OpCode>
+  <OpCode Name="slti">
+    <Type>I_Type</Type>
+    <OP>001010</OP>
+  </OpCode>
+  <OpCode Name="sltiu">
+    <Type>I_Type</Type>
+    <OP>001011</OP>
+  </OpCode>
+  <OpCode Name="sltu">
+    <Type>R_Type</Type>
+    <OP>000000</OP>
+    <Funct>101011</Funct>
+  </OpCode>
+  <OpCode Name="sll">
+    <Type>R_Type</Type>
+    <OP>000000</OP>
+    <Funct>000000</Funct>
+  </OpCode>
+  <OpCode Name="srl">
+    <Type>R_Type</Type>
+    <OP>000000</OP>
+    <Funct>000010</Funct>
+  </OpCode>
+  <OpCode Name="sb">
+    <Type>I_Type</Type>
+    <OP>101000</OP>
+  </OpCode>
+  <OpCode Name="sh">
+    <Type>R_Type</Type>
+    <OP>101001</OP>
+  </OpCode>
+  <OpCode Name="sw">
+    <Type>I_Type</Type>
+    <OP>101011</OP>
+  </OpCode>
+  <OpCode Name="sub">
+    <Type>R_Type</Type>
+    <OP>000000</OP>
+    <Funct>100010</Funct>
+  </OpCode>
+  <OpCode Name="subu">
+    <Type>R_Type</Type>
+    <OP>000000</OP>
+    <Funct>100011</Funct>
+  </OpCode>
+</OpCodeLibrary>

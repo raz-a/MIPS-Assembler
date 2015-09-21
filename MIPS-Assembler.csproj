@@ -49,12 +49,21 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AppArguments.cs" />
+    <Compile Include="InstructionFormatException.cs" />
+    <Compile Include="InvalidRegisterException.cs" />
     <Compile Include="MIPSAssembler.cs" />
+    <Compile Include="OpCode.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="UnsupportedOpCodeException.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
     <None Include="packages.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="OpCodeLibrary.xml">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
