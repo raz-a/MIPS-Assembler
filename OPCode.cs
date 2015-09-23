@@ -71,6 +71,16 @@ namespace MIPSAssembler
             set;
         }
 
+        /// <summary>
+        /// Whether or not the SHAMT is used
+        /// </summary>
+        [XmlElement]
+        public bool Shift
+        {
+            get;
+            set;
+        }
+
         [XmlIgnore]
         public uint MachineCodeValue
         {

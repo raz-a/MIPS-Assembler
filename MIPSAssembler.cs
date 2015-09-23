@@ -34,7 +34,7 @@ namespace MIPSAssembler
         /// <summary>
         /// Mif file header
         /// </summary>
-        internal static string MifHeader = "WIDTH=32;\nDEPTH=256;\n\nADDRESS_RADIX=HEX;\nDATA_RADIX=HEX;\n\nCONTENT BEGIN";
+        internal static string MifHeader = "\nWIDTH=32;\nDEPTH=256;\n\nADDRESS_RADIX=HEX;\nDATA_RADIX=HEX;\n\nCONTENT BEGIN";
 
         #endregion
 
@@ -218,7 +218,7 @@ namespace MIPSAssembler
 
                 if (instructionComponents.Count > 1)
                 {
-                        address += 4;
+                        address ++;
                 }
             }
 
@@ -246,9 +246,9 @@ namespace MIPSAssembler
                 }
             }
 
-
             OpCode OpCode;
 
+            // Check if opcode exists
             if (!OpCodeLibrary.TryGetValue(instructionComponents[0], out OpCode))
             {
                 throw new UnsupportedOpCodeException(instructionComponents[0], address);
@@ -260,83 +260,35 @@ namespace MIPSAssembler
             {
                 case OperationType.R_Type:
 
-                    List<uint> regs = new List<uint>(); 
-
-                    for (int i = 0; i < instructionComponents.Count - 1; i++)
-                    {
-                        uint reg;
-
-                        if (!uint.TryParse(instructionComponents[i+1].TrimStart('$'), out reg))
-                        {
-                            if (!registerDictionary.TryGetValue(instructionComponents[i+1].TrimStart('$'), out reg))
-                            {
-                                throw new InvalidRegisterException(instructionComponents[i+1], address);
-                            }
-                        }
-                        else
-                        {
-                            if (reg < 0 || reg > 31)
-                            {
-                                throw new InvalidRegisterException(instructionComponents[i+1], address);
-                            }
-                        }
-
-                        regs.Add(reg);
-                    }
-
                     if (instructionComponents.Count == 4)
                     {
-                        // Three Arguments
+                        // 3 Arguments
                         // rd
-                        machineCode |= regs[0] << 11;
+                        machineCode |= GetRegCode(instructionComponents[1]) << 11;
 
-                        // Check if last value is an immediate
-                        if (!instructionComponents[3].Contains("$"))
+                        // Check if last value is a shift ammount
+                        if (OpCode.Shift)
                         {
                             // rt
-                            machineCode |= regs[1] << 16;
+                            machineCode |= GetRegCode(instructionComponents[2]) << 16;
 
                             // Shamt
-                            machineCode |= regs[2] << 6;
+                            machineCode |= GetImmediateCode(instructionComponents[3], 5) << 6;
                         }
                         else
                         {
                             // rs
-                            machineCode |= regs[1] << 21;
+                            machineCode |= GetRegCode(instructionComponents[2]) << 21;
 
                             // rt
-                            machineCode |= regs[2] << 16;
-                        }
-                    }
-                    else if (instructionComponents.Count == 3)
-                    {
-                        // 2 Arguments
-                        // rd
-                        machineCode |= regs[0] << 11;
-
-                        // Check if last value is an immediate
-                        if (!instructionComponents[2].Contains("$"))
-                        {
-                            // rt
-                            machineCode |= regs[0] << 16;
-
-                            // Shamt
-                            machineCode |= regs[1] << 6;
-                        }
-                        else
-                        {
-                            // rs
-                            machineCode |= regs[0] << 21;
-
-                            // rt
-                            machineCode |= regs[1] << 16;
+                            machineCode |= GetRegCode(instructionComponents[3]) << 16;
                         }
                     }
                     else if (instructionComponents.Count == 2)
                     {
                         // 1 Argument (jr)
                         // rs
-                        machineCode |= regs[0];
+                        machineCode |= GetRegCode(instructionComponents[1]) << 21;
                     }
                     else
                     {
@@ -344,16 +296,164 @@ namespace MIPSAssembler
                         throw new InstructionFormatException("Invalid number of operands", address);
                     }
 
-                        break;
+                    break;
 
                 case OperationType.I_Type:
+
+                    if (instructionComponents.Count == 4)
+                    {
+                        // 3 Arguments
+                        // Check if a branch
+                        if (OpCode.Name.Equals("beq", StringComparison.InvariantCultureIgnoreCase) || OpCode.Name.Equals("bne", StringComparison.InvariantCultureIgnoreCase))
+                        {
+                            // rs
+                            machineCode |= GetRegCode(instructionComponents[1]) << 21;
+
+                            // rt
+                            machineCode |= GetRegCode(instructionComponents[2]) << 16;
+
+                            // Label 
+                            uint label;
+
+                            if (!labels.TryGetValue(instructionComponents[3], out label))
+                            {
+                                label = GetImmediateCode(instructionComponents[3], 16);
+                            }
+                            else
+                            {
+                                label -= (address + 1);
+                            }
+
+                            machineCode |= (label & 0x0000FFFF);
+                        }
+                        else
+                        {
+                            // rt 
+                            machineCode |= GetRegCode(instructionComponents[1]) << 16;
+
+                            // rs
+                            machineCode |= GetRegCode(instructionComponents[2]) << 21;
+
+                            // Immediate
+                            machineCode |= GetImmediateCode(instructionComponents[3], 16);
+                        }
+                        
+                    }
+                    else if (instructionComponents.Count == 3)
+                    {
+                        // 2 Arguments
+
+                        // rt
+                        machineCode |= GetRegCode(instructionComponents[1]) << 16;
+
+                        // Check if load/store
+                        if (instructionComponents[2].Contains("("))
+                        {
+                            string[] regPlusOffset = instructionComponents[2].Split(new char[] { '(', ')' }, StringSplitOptions.RemoveEmptyEntries);
+
+                            if (regPlusOffset.Length != 2)
+                            {
+                                throw new InstructionFormatException("Load/Store register+offset is syntactically incorrect");
+                            }
+
+                            // rs
+                            machineCode |= GetRegCode(regPlusOffset[1]) << 21;
+
+                            // Immediate
+                            machineCode |= GetImmediateCode(regPlusOffset[0], 16);
+                        }
+                        else
+                        {
+                            machineCode |= GetImmediateCode(instructionComponents[2], 16);
+                        }
+                    }
+                    else
+                    {
+                        // Invalid number of registers
+                        throw new InstructionFormatException("Invalid number of operands", address);
+                    }
+
                     break;
 
                 case OperationType.J_Type:
+
+                    if (instructionComponents.Count != 2)
+                    {
+                        // Invalid number of instructions
+                        throw new InstructionFormatException("Invalid number of operands", address);
+                    }
+
+                    uint jumpValue;
+                    
+                    if (!labels.TryGetValue(instructionComponents[1], out jumpValue))
+                    {
+                        jumpValue = GetImmediateCode(instructionComponents[1], 26);
+                    }
+
+                    machineCode |= jumpValue;
                     break;
             }
 
-            destination.WriteLine("\t{0:000}:{1:x8};", address >> 2, machineCode);
+            destination.WriteLine("\t{0:x3}  :   {1:X8};", address, machineCode);
+        }
+
+        /// <summary>
+        /// Gets the Machine Code Value from a register string component
+        /// </summary>
+        /// <param name="regString">Register to parse</param>
+        /// <returns>Machine code uint</returns>
+        private static uint GetRegCode(string regString)
+        {
+            string regValue = regString.TrimStart('$');
+            uint reg;
+
+            if (!uint.TryParse(regValue, out reg))
+            {
+                if (!registerDictionary.TryGetValue(regValue, out reg))
+                {
+                    throw new InvalidRegisterException(regValue);
+                }
+            }
+            else
+            {
+                if (reg < 0 || reg > 31)
+                {
+                    throw new InvalidRegisterException(regValue);
+                }
+            }
+
+            return reg;
+        }
+
+        /// <summary>
+        /// Gets the Machine Code Value from an immediate string component
+        /// </summary>
+        /// <param name="immString">Immediate to parse</param>
+        /// <param name="numBits">number of bits allowed</param>
+        /// <returns>Machine code uint</returns>
+        private static uint GetImmediateCode(string immString, uint numBits)
+        {
+            int immediate;
+
+            if (!(int.TryParse(immString, out immediate) || 
+                  int.TryParse(immString, System.Globalization.NumberStyles.HexNumber, null, out immediate) ||
+                  int.TryParse(immString.Substring(2), System.Globalization.NumberStyles.HexNumber, null, out immediate)
+                ))
+            {
+                throw new InvalidCastException("Invalid immediate value " + immString);
+            }
+
+            // Zero out top bits
+            immediate &= (int)(Math.Pow(2, numBits) - 1);
+
+            if (immediate > Math.Pow(2,numBits) - 1)
+            {
+                // Immediate is out of range
+                throw new ArgumentOutOfRangeException("regString");
+            }
+
+            // Get rid of top bits
+            return (uint)(immediate);
         }
 
         #endregion

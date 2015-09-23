@@ -100,18 +100,20 @@
     <Type>R_Type</Type>
     <OP>000000</OP>
     <Funct>000000</Funct>
+    <Shift>true</Shift>
   </OpCode>
   <OpCode Name="srl">
     <Type>R_Type</Type>
     <OP>000000</OP>
     <Funct>000010</Funct>
+    <Shift>true</Shift>
   </OpCode>
   <OpCode Name="sb">
     <Type>I_Type</Type>
     <OP>101000</OP>
   </OpCode>
   <OpCode Name="sh">
-    <Type>R_Type</Type>
+    <Type>I_Type</Type>
     <OP>101001</OP>
   </OpCode>
   <OpCode Name="sw">

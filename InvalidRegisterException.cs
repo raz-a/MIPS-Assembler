@@ -10,7 +10,7 @@ namespace MIPSAssembler
         {
         }
 
-        public InvalidRegisterException(string message) : base(message)
+        public InvalidRegisterException(string message) : base("Invalid register " + message)
         {
         }
 

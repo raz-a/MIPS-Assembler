@@ -50,6 +50,7 @@
   <ItemGroup>
     <Compile Include="AppArguments.cs" />
     <Compile Include="InstructionFormatException.cs" />
+    <Compile Include="InvalidLabelException.cs" />
     <Compile Include="InvalidRegisterException.cs" />
     <Compile Include="MIPSAssembler.cs" />
     <Compile Include="OpCode.cs" />
