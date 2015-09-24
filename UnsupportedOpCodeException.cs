@@ -18,7 +18,7 @@ namespace MIPSAssembler
         {
         }
 
-        public UnsupportedOpCodeException(string v, uint address) : base("Unsupported OpCode [" + v + "] at address " + address)
+        public UnsupportedOpCodeException(string v, uint address) : base("Unsupported OpCode [" + v + "] at line " + address)
         {
         }
 

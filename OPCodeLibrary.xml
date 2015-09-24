@@ -11,7 +11,7 @@
   </OpCode>
   <OpCode Name="addiu">
     <Type>I_Type</Type>
-    <OP>01001</OP>
+    <OP>001001</OP>
   </OpCode>
   <OpCode Name="addu">
     <Type>R_Type</Type>

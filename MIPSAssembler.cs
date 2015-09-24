@@ -12,7 +12,7 @@ namespace MIPSAssembler
     using System.Xml.Serialization;
     using CommandLine;
     using CommandLine.Text;
-    
+
     /// <summary>
     /// A Basic MIPS Assembler and Disassembler
     /// </summary>
@@ -41,9 +41,9 @@ namespace MIPSAssembler
         #region Globals
 
         /// <summary>
-        /// Dictionary of useable Opcodes
+        /// List of useable Opcodes
         /// </summary>
-        internal static Dictionary<string, OpCode> OpCodeLibrary;
+        internal static List<OpCode> OpCodeLibrary;
 
         /// <summary>
         /// Labels obtained from first Parse of Assembly
@@ -98,6 +98,8 @@ namespace MIPSAssembler
                     // Open Destination File Stream
                     using (StreamWriter destinationFile = new StreamWriter(cmdArgs.DestinationPath))
                     {
+                        destinationFile.AutoFlush = true;
+
                         if (cmdArgs.Disassemble)
                         {
                             DisassembleMIPS(sourceFile, destinationFile);
@@ -105,8 +107,9 @@ namespace MIPSAssembler
                         else
                         {
                             AssembleMIPS(sourceFile, destinationFile);
-                            Console.WriteLine("Success!");
                         }
+
+                        Console.WriteLine("Success!");
                     }
                 }
 
@@ -130,11 +133,11 @@ namespace MIPSAssembler
                 XmlSerializer deserializer = new XmlSerializer(typeof(List<OpCode>), new XmlRootAttribute("OpCodeLibrary"));
                 List <OpCode> OpCodes = (List<OpCode>)deserializer.Deserialize(xmlOCL);
 
-                OpCodeLibrary = new Dictionary<string, OpCode>();
+                OpCodeLibrary = new List<OpCode>();
 
                 foreach (var oc in OpCodes)
                 {
-                    OpCodeLibrary.Add(oc.Name, oc);
+                    OpCodeLibrary.Add(oc);
                 }
             }
         }
@@ -148,7 +151,90 @@ namespace MIPSAssembler
         /// <param name="destination">Assembly Stream</param>
         private static void DisassembleMIPS(StreamReader source, StreamWriter destination)
         {
-            throw new NotImplementedException();
+            // Read up until CONTENT BEGIN
+            while (source.ReadLine() != "CONTENT BEGIN");
+
+            uint address = 0;
+            string line;
+            while (!(line = source.ReadLine()).Contains("END"))
+            {
+                // Get binary
+                line = line.Split(new char[] { ':', ' ', '\t', ';' }, StringSplitOptions.RemoveEmptyEntries)[1];
+
+
+                line = Convert.ToString(Convert.ToUInt32(line, 16), 2).PadLeft(32, '0');
+
+                string op = line.Substring(0, 6);
+                string funct = line.Substring(26);
+
+                OpCode OpCode = (op.Equals("000000")) ? OpCodeLibrary.Find(oc => oc.Funct == funct) : OpCodeLibrary.Find(oc => oc.OP == op);
+
+                if (OpCode == null)
+                {
+                    throw new UnsupportedOpCodeException(op, address);
+                }
+
+                string assembly = string.Empty;
+
+                uint rs = Convert.ToUInt32(line.Substring(6, 5), 2);
+                uint rt = Convert.ToUInt32(line.Substring(11, 5), 2);
+                uint rd = Convert.ToUInt32(line.Substring(16, 5), 2);
+                uint shamt = Convert.ToUInt32(line.Substring(21, 5), 2);
+                short immediate = Convert.ToInt16(line.Substring(16, 16), 2);
+
+                switch (OpCode.Type)
+                {
+                    case OperationType.R_Type:
+
+                        // Check if it is a shift option
+                        if (OpCode.Shift)
+                        {
+                            assembly = string.Format("{0} ${1}, ${2}, {3}", OpCode.Name, rd, rt, shamt);
+                        }
+                        else if(OpCode.Name.StartsWith("j", StringComparison.InvariantCultureIgnoreCase))
+                        {
+                            // Jump instruction
+                            assembly = string.Format("{0} ${1}", OpCode.Name, rs);
+                        }
+                        else
+                        {
+                            assembly = string.Format("{0} ${1}, ${2}, ${3}", OpCode.Name, rd, rs, rt);
+                        }
+                        break;
+
+                    case OperationType.I_Type:
+
+                        if (OpCode.Name.StartsWith("b", StringComparison.InvariantCultureIgnoreCase))
+                        {
+                            // Branch
+                            assembly = string.Format("{0} ${1}, ${2}, 0x{3:X}", OpCode.Name, rs, rt, immediate);
+                        }
+                        else if (OpCode.Name.Contains("lui"))
+                        {
+                            assembly = string.Format("{0} ${1}, 0x{2:X}", OpCode.Name, rt, immediate);
+                        }
+                        else if (OpCode.Name.EndsWith("i", StringComparison.InvariantCultureIgnoreCase) || OpCode.Name.EndsWith("iu", StringComparison.InvariantCultureIgnoreCase))
+                        {
+                            // Immediate operation
+                            assembly = string.Format("{0} ${1}, ${2}, 0x{3:X}", OpCode.Name, rt, rs, immediate);
+                        }
+                        else
+                        {
+                            // Load/Store
+                            assembly = string.Format("{0} ${1} {3}(${2})", OpCode.Name, rt, rs, immediate);
+                        }
+
+                        break;
+
+                    case OperationType.J_Type:
+                        assembly = string.Format("{0} 0x{1:X}", OpCode.Name, Convert.ToUInt32(line.Substring(6), 2));
+                        break;
+                }
+
+                destination.WriteLine(assembly);
+
+            }
+
         }
 
         #endregion
@@ -246,10 +332,10 @@ namespace MIPSAssembler
                 }
             }
 
-            OpCode OpCode;
+            OpCode OpCode = OpCodeLibrary.Find(oc => oc.Name == instructionComponents[0]);
 
             // Check if opcode exists
-            if (!OpCodeLibrary.TryGetValue(instructionComponents[0], out OpCode))
+            if (OpCode == null)
             {
                 throw new UnsupportedOpCodeException(instructionComponents[0], address);
             }
@@ -304,7 +390,7 @@ namespace MIPSAssembler
                     {
                         // 3 Arguments
                         // Check if a branch
-                        if (OpCode.Name.Equals("beq", StringComparison.InvariantCultureIgnoreCase) || OpCode.Name.Equals("bne", StringComparison.InvariantCultureIgnoreCase))
+                        if (OpCode.Name.StartsWith("b", StringComparison.InvariantCultureIgnoreCase))
                         {
                             // rs
                             machineCode |= GetRegCode(instructionComponents[1]) << 21;
